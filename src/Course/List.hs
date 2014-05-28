@@ -28,23 +28,16 @@ import qualified Numeric as N
 -- BEGIN Helper functions and data types
 
 -- The custom list type
-data List t =
-  Nil
-  | t :. List t
-  deriving (Eq, Ord)
+data List t =  Nil  | t :. List t  deriving (Eq, Ord)
 
 -- Right-associative
 infixr 5 :.
 
-instance Show t => Show (List t) where
-  show = show . foldRight (:) []
+instance Show t => Show (List t) where show = show . foldRight (:) []
 
 -- The list of integers from zero to infinity.
-infinity ::
-  List Integer
-infinity =
-  let inf x = x :. inf (x+1)
-  in inf 0
+infinity :: List Integer
+infinity = let inf x = x :. inf (x+1) in inf 0
 
 -- functions over List that you may consider using
 foldRight :: (a -> b -> b) -> b -> List a -> b
@@ -68,12 +61,8 @@ foldLeft f b (h :. t) = let b' = f b h in b' `seq` foldLeft f b' t
 -- prop> x `headOr` infinity == 0
 --
 -- prop> x `headOr` Nil == x
-headOr ::
-  a
-  -> List a
-  -> a
-headOr =
-  error "todo"
+headOr :: a -> List a -> a
+headOr = foldRight const
 
 -- | The product of the elements of a list.
 --
@@ -82,11 +71,8 @@ headOr =
 --
 -- >>> product (1 :. 2 :. 3 :. 4 :. Nil)
 -- 24
-product ::
-  List Int
-  -> Int
-product =
-  error "todo"
+product :: List Int -> Int
+product = foldRight (*) 1
 
 -- | Sum the elements of the list.
 --
@@ -97,11 +83,8 @@ product =
 -- 10
 --
 -- prop> foldLeft (-) (sum x) x == 0
-sum ::
-  List Int
-  -> Int
-sum =
-  error "todo"
+sum :: List Int -> Int
+sum = foldRight (+) 0
 
 -- | Return the length of the list.
 --
@@ -109,11 +92,9 @@ sum =
 -- 3
 --
 -- prop> sum (map (const 1) x) == length x
-length ::
-  List a
-  -> Int
-length =
-  error "todo"
+length :: List a -> Int
+--length xs = sum $ [ 1 | _ <- xs ]
+length = foldLeft (const . succ) 0
 
 -- | Map the given function on each element of the list.
 --
@@ -123,12 +104,8 @@ length =
 -- prop> headOr x (map (+1) infinity) == 1
 --
 -- prop> map id x == x
-map ::
-  (a -> b)
-  -> List a
-  -> List b
-map =
-  error "todo"
+map :: (a -> b) -> List a -> List b
+map f = foldRight (\a b -> f a :. b) Nil 
 
 -- | Return elements satisfying the given predicate.
 --
@@ -140,12 +117,11 @@ map =
 -- prop> filter (const True) x == x
 --
 -- prop> filter (const False) x == Nil
-filter ::
-  (a -> Bool)
-  -> List a
-  -> List a
-filter =
-  error "todo"
+filter :: (a -> Bool) -> List a -> List a
+filter _ Nil = Nil
+filter f (x :. xs)
+     | f x = (x :. filter f xs)
+     | otherwise = filter f xs
 
 -- | Append two lists to a new list.
 --
@@ -159,12 +135,8 @@ filter =
 -- prop> (x ++ y) ++ z == x ++ (y ++ z)
 --
 -- prop> x ++ Nil == x
-(++) ::
-  List a
-  -> List a
-  -> List a
-(++) =
-  error "todo"
+(++) :: List a -> List a -> List a
+(++) = flip (foldRight (:.))
 
 infixr 5 ++
 
@@ -178,11 +150,8 @@ infixr 5 ++
 -- prop> headOr x (flatten (y :. infinity :. Nil)) == headOr 0 y
 --
 -- prop> sum (map length x) == length (flatten x)
-flatten ::
-  List (List a)
-  -> List a
-flatten =
-  error "todo"
+flatten :: List (List a) -> List a
+flatten = foldRight (++) Nil 
 
 -- | Map a function then flatten to a list.
 --
@@ -194,12 +163,8 @@ flatten =
 -- prop> headOr x (flatMap id (y :. infinity :. Nil)) == headOr 0 y
 --
 -- prop> flatMap id (x :: List (List Int)) == flatten x
-flatMap ::
-  (a -> List b)
-  -> List a
-  -> List b
-flatMap =
-  error "todo"
+flatMap :: (a -> List b) -> List a -> List b
+flatMap f =  flatten . map f 
 
 -- | Convert a list of optional values to an optional list of values.
 --
@@ -223,10 +188,8 @@ flatMap =
 --
 -- >>> seqOptional (Empty :. map Full infinity)
 -- Empty
-seqOptional ::
-  List (Optional a)
-  -> Optional (List a)
-seqOptional =
+seqOptional :: List (Optional a) -> Optional (List a)
+seqOptional = 
   error "todo"
 
 -- | Find the first element in the list matching the predicate.
@@ -245,12 +208,11 @@ seqOptional =
 --
 -- >>> find (const True) infinity
 -- Full 0
-find ::
-  (a -> Bool)
-  -> List a
-  -> Optional a
-find =
-  error "todo"
+--find :: (a -> Bool) -> List a -> Optional a
+--find a b = headOr filter a b 
+--find a _ = Empty
+--find a infinity = Full 0
+
 
 -- | Determine if the length of the given list is greater than 4.
 --
@@ -265,11 +227,9 @@ find =
 --
 -- >>> lengthGT4 infinity
 -- True
-lengthGT4 ::
-  List a
-  -> Bool
-lengthGT4 =
-  error "todo"
+lengthGT4 :: List a -> Bool
+lengthGT4 (_ :. _ :. _ :. _ :. _) = True
+lengthGT4 _ = False
 
 -- | Reverse a list.
 --
@@ -279,11 +239,8 @@ lengthGT4 =
 -- prop> let types = x :: List Int in reverse x ++ reverse y == reverse (y ++ x)
 --
 -- prop> let types = x :: Int in reverse (x :. Nil) == x :. Nil
-reverse ::
-  List a
-  -> List a
-reverse =
-  error "todo"
+reverse :: List a -> List a
+reverse = foldLeft (flip (:.)) Nil
 
 -- | Produce an infinite `List` that seeds with the given value at its head,
 -- then runs the given function for subsequent elements
@@ -297,8 +254,7 @@ produce ::
   (a -> a)
   -> a
   -> List a
-produce =
-  error "todo"
+produce f a = a :. produce f (f a)
 
 -- | Do anything other than reverse a list.
 -- Is it even possible?
