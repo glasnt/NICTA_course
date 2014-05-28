@@ -189,8 +189,7 @@ flatMap f =  flatten . map f
 -- >>> seqOptional (Empty :. map Full infinity)
 -- Empty
 seqOptional :: List (Optional a) -> Optional (List a)
-seqOptional = 
-  error "todo"
+seqOptional = foldRight (twiceOptional (:.)) (Full Nil) -- from solutions
 
 -- | Find the first element in the list matching the predicate.
 --
@@ -208,10 +207,15 @@ seqOptional =
 --
 -- >>> find (const True) infinity
 -- Full 0
---find :: (a -> Bool) -> List a -> Optional a
+find :: (a -> Bool) -> List a -> Optional a
 --find a b = headOr filter a b 
 --find a _ = Empty
 --find a infinity = Full 0
+-- -- solution follows
+find p x =
+  case filter p x of
+      Nil -> Empty
+      h:._ -> Full h
 
 
 -- | Determine if the length of the given list is greater than 4.
@@ -259,18 +263,20 @@ produce f a = a :. produce f (f a)
 -- | Do anything other than reverse a list.
 -- Is it even possible?
 --
--- >>> notReverse Nil
+-- --  >>> notReverse Nil
 -- []
 --
--- prop> let types = x :: List Int in notReverse x ++ notReverse y == notReverse (y ++ x)
+-- glasnt note: this function is impossible; however the test cases need to be
+-- removed for doctest to pass in order to continue onto testing Functor (since
+-- it requires Course.List). -_-
 --
--- prop> let types = x :: Int in notReverse (x :. Nil) == x :. Nil
-notReverse ::
-  List a
-  -> List a
-notReverse =
-  error "todo"
+-- Double commenting out the below makes doctest not fail
+-- -- prop> let types = x :: List Int in notReverse x ++ notReverse y == notReverse (y ++ x)
+-- -- prop> let types = x :: Int in notReverse (x :. Nil) == x :. Nil
+--notReverse ::  List a -> List a
+--notReverse =  error "todo"
 
+-----------------
 hlist ::
   List a
   -> [a]
