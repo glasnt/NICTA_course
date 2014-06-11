@@ -19,8 +19,7 @@ import Course.Optional
 import qualified Prelude as P
 
 class Apply f => Applicative f where
-  pure ::
-    a -> f a
+  pure :: a -> f a
 
 -- | Witness that all things with (<*>) and pure also have (<$>).
 --
@@ -32,41 +31,36 @@ class Apply f => Applicative f where
 --
 -- >>> (+1) <$> (1 :. 2 :. 3 :. Nil)
 -- [2,3,4]
-(<$>) ::
-  Applicative f =>
-  (a -> b)
-  -> f a
-  -> f b
-(<$>) =
-  error "todo"
+(<$>) :: Applicative f => (a -> b) -> f a -> f b
+f <$> a = pure f <*> a 
+-- f <$> a  = map f a  
+--fx <$> xs = [ fx x | x <- xs] 
+--(<$>) =  error "todo"
 
 -- | Insert into Id.
 --
 -- prop> pure x == Id x
 instance Applicative Id where
-  pure =
-    error "todo"
+  pure x = Id x
 
 -- | Insert into a List.
 --
 -- prop> pure x == x :. Nil
 instance Applicative List where
-  pure =
-    error "todo"
+  pure = (:. Nil)
+  --pure x = x : []
 
 -- | Insert into an Optional.
 --
 -- prop> pure x == Full x
 instance Applicative Optional where
-  pure =
-    error "todo"
+  pure = Full
 
 -- | Insert into a constant function.
 --
 -- prop> pure x y == x
 instance Applicative ((->) t) where
-  pure =
-    error "todo"
+  pure x y = x 
 
 -- | Sequences a list of structures to a structure of list.
 --
@@ -84,12 +78,10 @@ instance Applicative ((->) t) where
 --
 -- >>> sequence ((*10) :. (+2) :. Nil) 6
 -- [60,8]
-sequence ::
-  Applicative f =>
-  List (f a)
-  -> f (List a)
-sequence =
-  error "todo"
+sequence :: Applicative f => List (f a) -> f (List a)
+-- sequence = foldRight (lift2 (:.)) (pure Nil)
+sequence (x:.xs) = pure (:.) <*> x <*> sequence xs
+sequence Nil = pure Nil
 
 -- | Replicate an effect a given number of times.
 --
@@ -107,13 +99,8 @@ sequence =
 --
 -- >>> replicateA 3 ['a', 'b', 'c']
 -- ["aaa","aab","aac","aba","abb","abc","aca","acb","acc","baa","bab","bac","bba","bbb","bbc","bca","bcb","bcc","caa","cab","cac","cba","cbb","cbc","cca","ccb","ccc"]
-replicateA ::
-  Applicative f =>
-  Int
-  -> f a
-  -> f (List a)
-replicateA =
-  error "todo"
+replicateA :: Applicative f => Int -> f a -> f (List a)
+replicateA n =  sequence . replicate n --replicate a (f <*> b)
 
 -- | Filter a list with a predicate that produces an effect.
 --
@@ -131,13 +118,12 @@ replicateA =
 --
 -- >>> filtering (>) (4 :. 5 :. 6 :. 7 :. 8 :. 9 :. 10 :. 11 :. 12 :. Nil) 8
 -- [9,10,11,12]
-filtering ::
-  Applicative f =>
-  (a -> f Bool)
-  -> List a
-  -> f (List a)
-filtering =
-  error "todo"
+filtering :: Applicative f => (a -> f Bool) -> List a -> f (List a)
+filtering f (x:.xs) 
+    | lift2 f x = (x :. filter f xs)
+    | otherwise = filter f xs
+-- = check x :. filtering check xs
+-- check x | x <- l ] --error "todo"
 
 -----------------------
 -- SUPPORT LIBRARIES --
@@ -155,16 +141,8 @@ instance Applicative P.Maybe where
   pure =
     P.return
 
-return ::
-  Applicative f =>
-  a
-  -> f a
-return =
-  pure
+return :: Applicative f => a -> f a
+return = pure
 
-fail ::
-  Applicative f =>
-  Chars
-  -> f a
-fail =
-  error . hlist
+fail :: Applicative f => Chars -> f a
+fail = error . hlist
